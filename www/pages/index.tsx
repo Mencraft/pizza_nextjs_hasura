@@ -5,6 +5,7 @@ import styles from '../styles/Home.module.css'
 // You should use getServerSideProps when:
 // - Only if you need to pre-render a page whose data must be fetched at request time
 import { GetServerSideProps, InferGetServerSidePropsType } from 'next'
+import {client} from '../utils/clients'
 
 const inter = Inter({ subsets: ['latin'] })
 type Data = {
@@ -12,7 +13,7 @@ type Data = {
 }
 
 export default function Home({friends}:InferGetServerSidePropsType<typeof getServerSideProps>) {
-  console.log(friends);
+  console.log(friends );
   
   return (
     <>
@@ -33,38 +34,53 @@ export default function Home({friends}:InferGetServerSidePropsType<typeof getSer
   )
 }
 
-
+const QUERY = `query {
+  friend {
+    name
+  }
+}`
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-let friends;
-try{
-  const response = await fetch(process.env.NEXT_PUBLIC_HASURA_PROJECT_ENDPOINT as string,{
-    method:'POST',
-    headers:{
-      'content-type':'application/json',
-      'x-hasura-admin-secret': process.env.HASURA_ADMIN_SECRET as string
-    },
-    body: JSON.stringify({
-      query:`query {
-        friend {
-          name
-        }
-      }`
-    })
-    })
-    
-    const result = await response.json()
-    const data:Data = result.data
 
-    friends = data.friend
 
-    console.log(result)
-}catch(e){
-console.log(e)
-}
-
+ return client.query(QUERY).toPromise().then(d => {
 
   return {
-    props: { friends }
+    props: { friends:d.data.friend }
   }
+}).catch(e=>{
+  return {
+    props: {  }
+  }
+})
+
+
+// try{
+//   const response = await fetch(process.env.NEXT_PUBLIC_HASURA_PROJECT_ENDPOINT as string,{
+//     method:'POST',
+//     headers:{
+//       'content-type':'application/json',
+//       'x-hasura-admin-secret': process.env.HASURA_ADMIN_SECRET as string
+//     },
+//     body: JSON.stringify({
+//       query:`query {
+//         friend {
+//           name
+//         }
+//       }`
+//     })
+//     })
+    
+//     const result = await response.json()
+//     const data:Data = result.data
+
+//     friends = data.friend
+
+//     console.log(result)
+// }catch(e){
+// console.log(e)
+// }
+
+
+  
 }
